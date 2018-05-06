@@ -94,7 +94,7 @@ def subscribe_to_input():
         for point in new_points:
             enqueue_point(point.userId, point.lon, point.lat, point.timestamp)
 
-def initializeRelationships():
+def initialize_relationships():
     friends[1] = [2,7,10]
     friends[2] = [1,5]
     friends[3] = [8,9]

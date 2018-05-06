@@ -1,7 +1,7 @@
 from datetime import datetime
 from math import sqrt
 from flask import Flask, request, jsonify
-from backend import enqueue_point, points, friends, initialize_relationships, get_points, get_friend_points, get_friends
+from backend import enqueue_point, points, friends, initialize_relationships, get_points, get_possible_intersections, get_friends
 app = Flask(__name__)
 
 # This flask file is going to hold the endpoints 
