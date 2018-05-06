@@ -17,9 +17,7 @@ def post_locations_get_intersections():
         lon = json['lon']
         lat = json['lat']
         add_user_location(userId, lon, lat, timestamp)
-        resp = jsonify(userId=userId, longitude=lon, latitude=lat)
-        resp.status_code = 202
-        return resp 
+        return ('', 202) 
     elif request.method == 'GET':
         userId = request.args.get('userId')
         intersections = get_intersections(userId)
@@ -40,6 +38,7 @@ def get_intersections(userId):
     # the user in the last 24 hours 
 
     user_points = get_points(userId) #elasticsearch result
+    print user_points
     intersections = []
     last_intersections = {}
 
@@ -68,22 +67,22 @@ def get_intersections(userId):
             # into a dictionary to track when to
             # next add intersection between these 
             # two friends
-            if friend.id in last_intersections:
-                last_intersect = last_intersections[friend.id]
-                hours_diff = abs(point.timestamp - last_intersect.timestamp) / 3600
+            if friend in last_intersections:
+                last_intersect = last_intersections[friend]
+                hours_diff = abs((point['timestamp'] - last_intersect).total_seconds()) / 3600
                 if hours_diff > 1:
                     new_intersection = True
-                    if point.timestamp > last_intersect.timestamp:
-                        last_intersections[friend.id].timestamp = point.timestamp
+                    if point['timestamp'] > last_intersect:
+                        last_intersections[friend] = point['timestamp']
             else:
                 new_intersection = True
-                last_intersections[friend.id] = point.timestamp
+                last_intersections[friend] = point['timestamp']
 
             if new_intersection:
                 intersection = {}
                 intersection['from'] = userId
-                intersection['to'] = friend.id
-                intersection['time'] = point.timestamp
+                intersection['to'] = friend
+                intersection['time'] = point['timestamp']
                 intersections.append(intersection)
 
         # 3) Using elasticsearch range query, 
@@ -107,8 +106,8 @@ def get_intersections(userId):
             # determine if 
             # lonDelta^2 + latDelta^2 <= 2500 (or 50^2)
             # if it is then the coordinate is a match
-            a_squared = pow(abs(intersect.point.lon - point.lon),2)
-            b_squared = pow(abs(intersect.point.lat - point.lat),2)
+            a_squared = pow(abs(intersect['lon'] - point['lon']),2)
+            b_squared = pow(abs(intersect['lat'] - point['lat']),2)
             c_squared = pow(50, 2)
 
             if a_squared + b_squared <= c_squared:
@@ -121,22 +120,23 @@ def get_intersections(userId):
             # into a dictionary to track when to
             # next add intersection between these 
             # two friends
-            if intersect.id in last_intersections:
-                last_intersect = last_intersections[intersect.id]
-                hours_diff = abs(point.timestamp - last_intersect.timestamp) / 3600
+            if intersect['userId'] in last_intersections:
+                last_intersect = last_intersections[intersect['userId']]
+                hours_diff = abs((point['timestamp'] - last_intersect).total_seconds()) / 3600
+                print hours_diff
                 if hours_diff > 1:
                     new_intersection = True
-                    if point.timestamp > last_intersect.timestamp:
-                        last_intersections[intersect.id].timestamp = point.timestamp
+                    if point['timestamp'] > last_intersect['timestamp']:
+                        last_intersections[intersect['userId']] = point['timestamp']
             else:
                 new_intersection = True
-                last_intersections[intersect.id] = point.timestamp
+                last_intersections[intersect['userId']] = point['timestamp']
 
             if new_intersection and valid_intersection:
                 intersection = {}
                 intersection['from'] = userId
-                intersection['to'] = friend.id
-                intersection['time'] = point.timestamp
+                intersection['to'] = friend['id']
+                intersection['time'] = point['timestamp']
                 intersections.append(intersection)
     return intersections
 

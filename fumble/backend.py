@@ -15,22 +15,30 @@ def enqueue_point(userId, lon, lat, timestamp):
     lat_meters = lat * (111.32 * 1000)
 
     # Now add them to elastic search
-    event = {}
-    event['userId'] = userId
-    event['lon'] = lon_meters
-    event['lat'] = lat_meters
-    event['timestamp'] = timestamp
+    point = {}
+    point['userId'] = userId
+    point['lon'] = lon_meters
+    point['lat'] = lat_meters
+    point['timestamp'] = timestamp
 
-    points.append(event)
+    points.append(point)
+
 
 def get_points(userId):
     points_found = []
-    for event in points:
-        if event['userId'] != userId:
+    uid = int(userId)
+    
+    for point in points:
+        point_uid = int(point['userId'])
+        if point_uid != uid:
             continue
-        diff = event['timestamp'] - datetime.now() / 3600
+
+        now = datetime.now()
+        diff = point['timestamp'] - now
+        diff = diff.total_seconds() / 3600
+
         if diff <= 24:
-            points.append(event)
+            points_found.append(point)
     return points_found
 
 
@@ -47,17 +55,17 @@ def get_friends(userId, point, valid_axis_modifer):
     # the inscribed square is covers ~64% of the 
     # circle of possible insections O(1)
 
-    valid_upper_lon = point.lon + valid_axis_modifer
-    valid_lower_lon = point.lon - valid_axis_modifer
-    valid_upper_lat = point.lat + valid_axis_modifer
-    valid_lower_lat = point.lat - valid_axis_modifer
+    valid_upper_lon = point['lon'] + valid_axis_modifer
+    valid_lower_lon = point['lon'] - valid_axis_modifer
+    valid_upper_lat = point['lat'] + valid_axis_modifer
+    valid_lower_lat = point['lat'] - valid_axis_modifer
 
-    friends_list = friends[userId]
+    friends_list = friends[int(userId)]
     for point in points:
         if point['userId'] not in friends_list:
             continue
-        if valid_lower_lat <= point.lat and point.lat <= valid_upper_lat:
-            if valid_lower_lon <= point.lon and point.lon <= valid_upper_lon:
+        if valid_lower_lat <= point['lat'] and point['lat'] <= valid_upper_lat:
+            if valid_lower_lon <= point['lon'] and point['lon'] <= valid_upper_lon:
                 friend_points.append(point['userId'])
 
     return friend_points
@@ -65,17 +73,17 @@ def get_friends(userId, point, valid_axis_modifer):
 def get_possible_intersections(userId, point, valid_axis_modifer):
     friend_points = []
 
-    valid_upper_lon = point.lon + 50
-    valid_lower_lon = point.lon - 50
-    valid_upper_lat = point.lat + 50
-    valid_lower_lat = point.lat - 50
+    valid_upper_lon = point['lon'] + 50
+    valid_lower_lon = point['lon'] - 50
+    valid_upper_lat = point['lat'] + 50
+    valid_lower_lat = point['lat'] - 50
 
-    friends_list = friends[userId]
+    friends_list = friends[int(userId)]
     for point in points:
-        if point['userId'] not in friends_list:
+        if int(point['userId']) not in friends_list:
             continue
-        if valid_lower_lat <= point.lat and point.lat <= valid_upper_lat:
-            if valid_lower_lon <= point.lon and point.lon <= valid_upper_lon:
+        if valid_lower_lat <= point['lat'] and point['lat'] <= valid_upper_lat:
+            if valid_lower_lon <= point['lon'] and point['lon'] <= valid_upper_lon:
                 friend_points.append(point)
 
     return friend_points
@@ -92,7 +100,7 @@ def subscribe_to_input():
 
         new_points = []
         for point in new_points:
-            enqueue_point(point.userId, point.lon, point.lat, point.timestamp)
+            enqueue_point(point['userId'], point['lon'], point['lat'], point['timestamp'])
 
 def initialize_relationships():
     friends[1] = [2,7,10]
