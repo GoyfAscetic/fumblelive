@@ -96,7 +96,7 @@ def get_intersections(userId):
         # have an intersection within the last hour
         # O(k) - should be its own function
 
-        possible_intersections = get_friend_points(userId, point, valid_axis_modifer)  #elasticsearch results
+        possible_intersections = get_possible_intersections(userId, point, valid_axis_modifer)  #elasticsearch results
 
         for intersect in possible_intersections:
             new_intersection = False
